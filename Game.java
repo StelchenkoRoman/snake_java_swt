@@ -24,9 +24,9 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
-public class my {
+public class Game {
 
   public static void main(String[] args) {	 
-	  Menu menu=new Menu();   //объект класса Menu
-}
+	Menu menu = new Menu();   //объект класса Menu
+  }
 }
