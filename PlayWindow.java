@@ -20,9 +20,14 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell; 
 
 
+/**
+ * this class describes Play window
+ * @author green
+ * @version 0.1
+ */
 public class PlayWindow {         //игровое окно
   private final int IMAGE_WIDTH  =  20; 
-  private int TIMER_INTERVAL, level ; 
+  private int keyPause = 262144, TIMER_INTERVAL = 100; 
   private Label scoreLabel; 
   private Canvas canvas; 
   private Shell shell, mainShell; 
@@ -31,6 +36,14 @@ public class PlayWindow {         //игровое окно
   private Button pauseButton, newGameButton; 
   private boolean pauseFlag, newGameFlag; 
   private Snake MySnake = new Snake( );    //объект класса Snake
+  class SnakeAnimate extends Thread
+  {
+  	@Override
+  	public void run()
+  	{
+  		MySnake.animate( scoreLabel );   
+  	}
+  }
   Device device  =  Display.getCurrent ( ); 
   PlayWindow ( ) {}
   PlayWindow ( final Shell mainShell1, final Display display1 ) {   //настройка игрового окна
@@ -44,42 +57,44 @@ public class PlayWindow {         //игровое окно
     Color yellow  =  new Color ( device, 255, 250, 205 ); 	 
     shell.setBackground( yellow ); 
   }
-	 
+	
   final Runnable runnable  =  new Runnable( ) {
-	public void run( ) {
-	  if ( !MySnake.getLife( ) ) {                     //если конец игры
-	    gameOver( shell, display, String.valueOf( MySnake.getPoints( ) ), mainShell ); 
-	    return; 
-	  }
-	  if ( !shell.isDisposed( ) )
-	    if ( !pauseFlag )
-	      animate( ); 
-	  display.timerExec( TIMER_INTERVAL, this );   
-	  if ( !MySnake.getLife( ) )
-	    return; 
+	public void run( ) {	
+      if ( !shell.isDisposed( ) )
+	    if ( !pauseFlag ) {
+		  SnakeAnimate sA = new SnakeAnimate();
+		  sA.run();
+		  try {
+			sA.join();
+		  } catch (InterruptedException e) {
+			e.printStackTrace();
+			};
+	      if ( !MySnake.getLife( ) ) {                     //если конец игры
+		    gameOver( shell, display, String.valueOf( MySnake.getPoints( ) ), mainShell ); 
+		    return; 
+	      }				
+	      canvas.redraw();
+	    }
+	  display.timerExec( TIMER_INTERVAL, this );
 	}
   }; 
 	  
-  public void open( final Shell mainShell, final Display display, final String name, int lvl ) {
+  public  void open( final Shell mainShell, final Display display, final String name, final int level,final int mode ) {
 	for ( Control kid : shell.getChildren( ) ) {
 	  kid.dispose( ); 
 	}
-	newGameFlag = false; 
-	MySnake.startValue( );  
-	level = lvl; 
+	shell.setText( "Snake" ); 
+	newGameFlag = false;
+	MySnake.startValue( level,mode );  
 	playerName = name; 
-		
 	if ( level == 0 ) { 
-	  TIMER_INTERVAL  = 50; 
 	  nameFile = "HARD.txt"; 
     }		
 	if ( level == 1 ) {
-	  TIMER_INTERVAL  = 75; 
 	  nameFile = "NORMAL.txt"; 
 	}
 	if ( level == 2 ) {
 	  nameFile = "EASY.txt"; 
-	  TIMER_INTERVAL  = 100; 
 	} 
 	Color red  =  new Color ( device, 250, 128, 114 ); 
 	Color white  =  new Color ( device, 255, 255, 255 ); 
@@ -109,15 +124,26 @@ public class PlayWindow {         //игровое окно
 	toMenuButton.setBackground( red ); 
 	toMenuButton.setForeground( black ); 
 	toMenuButton.setBounds( 380, 414, 100, 25 );     
-	         
+	  
+	shell.addListener(SWT.Close, new Listener() {
+	  public void handleEvent(Event event) {
+		if ( MySnake.getMode() != 3) {
+		  if( MySnake.getLife() == true ) {
+		   	MySnake.save(playerName);
+		  } else
+		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
+		  MySnake.repFileClose();
+	    }	
+	  }
+	});
 	Listener  pauseListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
 	    pauseButton.setVisible( false ); 
 	    continueButton.setVisible( true );  	
 	    pauseFlag = true; 
       }
-    };    
-	           
+    }; 
+    
 	Listener  continueListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
 	 	pauseButton.setVisible( true ); 
@@ -127,29 +153,42 @@ public class PlayWindow {         //игровое окно
 	};  
 	Listener  exitListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
-	  	System.exit( 0 ); 	        
+		if ( MySnake.getMode() != 3) {
+		  if( MySnake.getLife() == true ) {
+		  	MySnake.save(playerName);
+		  } else
+		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
+		  MySnake.repFileClose();
+		}
+		System.exit( 0 ); 	        
 	  }
 	};  
 	Listener  menuListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
 	 	newGameFlag = true; 
 	    mainShell.setVisible( true ); 
-		recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
-		shell.setVisible( false ); 
+	    if ( MySnake.getMode() != 3) {
+	      if( MySnake.getLife() == true ) {
+	    	MySnake.save(playerName);
+	      } else
+		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
+	      MySnake.repFileClose();
+	    }
+	 	shell.setVisible( false ); 
 		return; 
       }
 	};           
 	newGameButton  =  new Button( shell, SWT.PUSH ); 
-	newGameButton.setText( "NEW GAME" ); 
+	newGameButton.setText( "RESTART" ); 
 	newGameButton.setBackground( red ); 
 	newGameButton.setForeground( black ); 
-	newGameButton.setBounds( 230, 200, 100, 25 );     
+	newGameButton.setBounds( 260, 414, 100, 25 );     
 	newGameButton.setVisible( false );        
 	Listener  newGameListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
-	    mainShell.setVisible( true ); 
-		recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
-		shell.setVisible( false ); 
+	    recordsRefresh( nameFile, MySnake.getPoints( ), playerName ); 
+		open(mainShell,display,playerName,level,mode);
+		mainShell.setVisible( false ); 
 	  }
 	};     
 	newGameButton.addListener( SWT.Selection, newGameListener ); 	    		     
@@ -166,11 +205,10 @@ public class PlayWindow {         //игровое окно
 	canvas.setBackground( white ); 
 		 	      
     final  Image image  =  new Image( shell.getDisplay( ), "/home/green/final vers1.png" ); 
-    final  Image image1  =  new Image( shell.getDisplay( ), "/home/green/dollar.jpg" ); 
     final  Image image2  =  new Image( shell.getDisplay( ), "/home/green/d.gif" ); 
     final  Image image3  =  new Image( shell.getDisplay( ), "/home/green/index.jpeg" ); 
 	
-    canvas.addPaintListener( new PaintListener( ) {
+    canvas.addPaintListener( new PaintListener( ) {    // отрисовка игрового поля
 	  public void paintControl( PaintEvent event ) {
 	    int tx = 0;    //координаты  требуемой части  изображения для отображения элемента змейки
 	    int ty = 0; 
@@ -188,8 +226,13 @@ public class PlayWindow {         //игровое окно
 	    for ( int i = 20; i<580; i+= 20 )                    // отрисовка поля змейки
 	    for ( int j = 20; j<380; j+= 20 )
 	      event.gc.drawImage( image3, 0, 48, 48, 47, i, j, 20, 20 ); 
-        event.gc.drawImage( image1, MySnake.getFoodCoords( ).x, MySnake.getFoodCoords( ).y ); 
-				 
+        event.gc.drawImage( image, 128, 192, 64, 64, MySnake.getFoodCoords( ).x, MySnake.getFoodCoords( ).y,20,20 ); 
+		
+        for ( int i = 0; i<MySnake.getWallSize(); i++ ) {
+        	  event.gc.drawImage( image, 4, 193, 61, 61, MySnake.getWallCoords(i).x, MySnake.getWallCoords(i).y, 20, 20 ); 
+              
+        }
+        
 	    for ( int i = 0; i<MySnake.getSize( ); i++ ) {             //отрисовка змейки
 	      segx = MySnake.getSnakeCoords( i ).x;   //текущее значение координат элемента змейки
 	      segy = MySnake.getSnakeCoords( i ).y; 
@@ -238,19 +281,23 @@ public class PlayWindow {         //игровое окно
 	    event.gc.drawImage( image, tx*64, ty*64, 64, 64, MySnake.getSnakeCoords( i ).x, 
 		        			MySnake.getSnakeCoords( i ).y, IMAGE_WIDTH, IMAGE_WIDTH );  // отрисовка i-го эл-та змейки
 		}
+	    
 	  }
     });   
 		  
 	Listener listenerKeyboard  =  new Listener( ) { // действие на нажатие кнопок
 	  public void handleEvent( Event e ) {
-	    if ( !pauseFlag )
+		if ( e.keyCode == keyPause ) {
+		  pauseFlag = !pauseFlag;
+		}
+		if ( !pauseFlag )
 	      MySnake.keyPressed( e.keyCode );    //e, keyCode - код нажатой клавиши
 	  }
 	}; 			 
 	Display.getCurrent( ).addFilter( SWT.KeyDown, listenerKeyboard ); 		  	    
 	shell.open( ); 
-	display.timerExec( TIMER_INTERVAL, runnable );   		   
-  }
+	display.timerExec( 1000, runnable );	//запуск движения змейки через секунду
+ }
 	
   public  void recordsRefresh( String filename, int points, String playerName ) {  //метод обновления рекордов
     String name[] = new String[10], record[] = new String[10]; 
@@ -287,6 +334,7 @@ public class PlayWindow {         //игровое окно
 	    for ( int i = 0; i<10; i++ ) {   //запись текста в файл
 	      out.println( name[i] ); 
 	      out.println( record[i] ); 
+	      
 	    }
 	  } finally {
 	      out.close( );    //закрытие файла
@@ -296,21 +344,19 @@ public class PlayWindow {         //игровое окно
 	  }
 	}
   }	    	
-	  
-  public  void animate( ) {	  
-	MySnake.animate( scoreLabel );   
-	canvas.redraw( );   //обновление игрового поля
-  }
-
   public  void gameOver( final Shell shell, final Display display, String points, final Shell mainShell ) { //конец игры  
    	canvas.dispose( ); 
 	scoreLabel.dispose( ); 
 	pauseButton.setVisible( false ); 
 	shell.setText( "Game over" ); 
+	Label image_label  =  new Label( shell, SWT.NONE );               // загрузка кортинки
+	image_label.setImage( new Image( display, "/home/green/ov.png" ) ); 
+	image_label.setBounds( 70, 50, 380, 280 ); 
+	
 	Label gameOverLabel  =  new Label( shell, SWT.WRAP | SWT.CENTER );            
-	gameOverLabel.setText( "Game over\n Your score : "+points ); 
-	gameOverLabel.setBounds( 230, 150, 100, 100 ); 
+	gameOverLabel.setText( " Your score : "+points ); 
+	gameOverLabel.setBounds( 10, 420, 100, 30 ); 
 	newGameButton.setVisible( true );        
   }
-
+   
 }

@@ -17,16 +17,21 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 
+import java.lang.Thread;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-
+/**
+ * this class open game
+ * @author green
+ * @version 0.1
+ */
 public class Game {
 
-  public static void main(String[] args) {	 
+  public static void main(String[] args) {	
 	Menu menu = new Menu();   //объект класса Menu
   }
 }
