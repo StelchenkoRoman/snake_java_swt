@@ -5,6 +5,11 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Random;
 import java.util.Scanner;
 
 import org.eclipse.swt.SWT;
@@ -32,8 +37,11 @@ import org.eclipse.swt.widgets.Text;
  */
 public class Menu {
   private static Table table;
-  private static int level;
+  private static Label scalaLabel;
+  private static Label javaLabel;
+  private static int level,criterion;
   private static PlayWindow play;
+  private static String []fileNames;
   private static int playerMode = 0 , botMode = 1, loadMode = 2, replayMode = 3;
   Menu( ) {												//конструктор класса Menu
 	final  Display display  =  new Display( );
@@ -76,29 +84,7 @@ public class Menu {
       }
 	};
 	start_button.addListener( SWT.Selection, startListener );   // привязка кнопки к действию
-
-	Button replay_button  =  new Button( shell, SWT.None );    //сохраненные игры
-	replay_button.setText( "&REPLAY GAME" );
-	replay_button.setBackground( cyan );
-	replay_button.setForeground( black );
-	replay_button.setBounds( 40, 225, 200, 50 );
-	Listener replayListener  =  new Listener( ) {
-	  public void handleEvent( Event event ) {
-		  File file  =  new File( "replay.txt" );
-		  try {
-		    Scanner sc = new Scanner(file);
-		    level = sc.nextInt();
-		    sc.close();
-		    }
-		    catch (IOException  e) {
-		        e.printStackTrace();
-		    }
-		 play.open( shell, display, "", level,replayMode);
-		 shell.setVisible( false );
-		     }
-	};
-	replay_button.addListener( SWT.Selection, replayListener );
-
+	
 	Button rec_button  =  new Button( shell, SWT.None );    //кнопка рекорды
 	rec_button.setText( "&RECORDS" );
 	rec_button.setBackground( cyan );
@@ -123,6 +109,22 @@ public class Menu {
 	};
 	infoButton.addListener( SWT.Selection, infoListener );
 
+	Button botButton  =  new Button( shell, SWT.PUSH );
+	botButton.setText( "BOT MODE" );
+	botButton.setBackground( white );
+	botButton.setForeground( black );
+	botButton.setBounds( 40, 225, 200, 50);
+	Listener  botListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {
+		 Random random=new Random();
+		 String botName="bot"+String.valueOf((1+random.nextInt( 20 )));
+		 play.open( shell, display, botName, 2,botMode,"");
+		 openMenu(shell,display);
+		 shell.setVisible( false );
+      }
+    };
+    botButton.addListener( SWT.Selection, botListener );
+	
 	Button exitButton  =  new Button( shell, SWT.PUSH );   //кнопка выход
 	exitButton.setBackground( red );
 	exitButton.setForeground( black );
@@ -141,7 +143,7 @@ public class Menu {
 	  kid.dispose( );
 	}
     Color cyan  =  display.getSystemColor( SWT.COLOR_CYAN );
-    Color red  =  display.getSystemColor( SWT.COLOR_RED );
+    Color red   =  display.getSystemColor( SWT.COLOR_RED );
     Color black  =  display.getSystemColor( SWT.COLOR_BLACK );
     Color white  =  display.getSystemColor( SWT.COLOR_WHITE );
     shell.setForeground( cyan );
@@ -157,28 +159,45 @@ public class Menu {
     levelCombo.add( "NORMAL" );
     levelCombo.add( "HARD" );
     levelCombo.setText( "EASY" );
-    Button exitButton  =  new Button( shell, SWT.PUSH );
-    exitButton.setText( "EXIT" );
-    exitButton.setBackground( red );
-    exitButton.setForeground( black );
-    exitButton.setBounds( 155, 350, 100, 50 );
+    scalaLabel  =  new Label( shell, SWT.None );
+    scalaLabel.setBounds( 35, 380, 300, 20 );
+    javaLabel  =  new Label( shell, SWT.None );
+    javaLabel.setBounds( 35, 405, 300, 20 );
+    final Button replayButton  =  new Button( shell, SWT.PUSH );
+    replayButton.setText( "REPLAY" );
+    replayButton.setBackground( red );
+    replayButton.setForeground( black );
+    replayButton.setBounds( 155, 430, 100, 30 );
     Button backButton  =  new Button( shell, SWT.PUSH );
     backButton.setText( "BACK" );
     backButton.setBackground( white );
     backButton.setForeground( black );
-    backButton.setBounds( 35, 350, 100, 50 );
+    backButton.setBounds( 35, 430, 100, 30 );
     Listener backListener  =  new Listener( ) {
       public void handleEvent( Event event ) {
         openMenu( shell, display );
       }
     };
-    Listener exitListener  =  new Listener( ) {
+    Listener replayListener  =  new Listener( ) {
       public void handleEvent( Event event ) {
-	    System.exit( 0 );
-	  }
+	     if(table.getSelectionIndex()!=-1)
+    	  play.open( shell, display, "", level,replayMode,fileNames[table.getSelectionIndex()]);
+	     openMenu(shell,display);
+	     shell.setVisible(false);
+      }
     };
-    exitButton.addListener( SWT.Selection, exitListener );
+    replayButton.addListener( SWT.Selection, replayListener );
     backButton.addListener( SWT.Selection, backListener );  
+    Label sortLabel  =  new Label( shell, SWT.None );
+    sortLabel.setText( "Criterion " );
+    sortLabel.setBounds( 55, 45, 70, 30 );
+    final  Combo sortingSel =  new Combo( shell, SWT.DROP_DOWN | SWT.READ_ONLY );
+    sortingSel.setBounds( 130, 40, 100, 30 );
+    sortingSel.add( "SCORES" );
+    sortingSel.add( "NAMES" );
+    sortingSel.setText( "SCORES" );
+    criterion=0;
+    level=2;
     table  =  new Table( shell, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION );
     table.setLinesVisible( true );
     table.setHeaderVisible( true );
@@ -187,24 +206,36 @@ public class Menu {
 	  TableColumn column  =  new TableColumn( table, SWT.NONE );
 	  column.setText( titles[i] );
 	}
-	fillTable( table, filename[0], titles.length );
+    fillTable( table,level, titles.length,criterion );
 	levelCombo.addSelectionListener( new SelectionAdapter( ) {
 	  public void widgetSelected( SelectionEvent e ) {
-	    if ( levelCombo.getText( ).equals( "EASY" ) ) {
-	   	  table.clearAll( );
-	   	  table.setItemCount( 0 );
-	  	  fillTable( table, filename[0], titles.length );       	 
+		table.clearAll( );
+	   	table.setItemCount( 0 );
+		if ( levelCombo.getText( ).equals( "EASY" ) ) {
+		  level=2;
+		  fillTable( table, level, titles.length, criterion );       	 
 	    } else if ( levelCombo.getText( ).equals( "NORMAL" ) ) {
-	        table.clearAll( );
-	        table.setItemCount( 0 );
-	        fillTable( table, filename[1], titles.length );
+	        level=1;
+	    	fillTable( table,level, titles.length, criterion );
 	      } else {
-	          table.clearAll( );
-	          table.setItemCount( 0 );
-	          fillTable( table, filename[2], titles.length );
+	    	  level=0;
+	          fillTable( table,level, titles.length, criterion);
 	        }
       }
      });
+	 sortingSel.addSelectionListener( new SelectionAdapter( ) {
+	   public void widgetSelected( SelectionEvent e ) {
+	     table.clearAll( );
+		 table.setItemCount( 0 );
+		   if ( sortingSel.getText( ).equals( "SCORES" ) ) {
+			 criterion=0;
+			 fillTable( table, level, titles.length, criterion );       	 
+		   } else if ( sortingSel.getText( ).equals( "NAMES" ) ) {
+		       criterion=1;
+		       fillTable( table,level, titles.length, criterion );
+		     }
+	  }
+	});
   }
   /**  displays in the window information about the game*/
   public static void openInfo( final Shell shell, final Display display ) {
@@ -223,13 +254,13 @@ public class Menu {
     exitButton.setText( "EXIT" );
     exitButton.setBackground( red );
     exitButton.setForeground( black );
-    exitButton.setBounds( 155, 350, 100, 50 );
+    exitButton.setBounds( 155, 430, 100, 30 );
  
     Button backButton  =  new Button( shell, SWT.PUSH );
     backButton.setText( "BACK" );
     backButton.setBackground( white );
     backButton.setForeground( black );
-    backButton.setBounds( 35, 350, 100, 50 );
+    backButton.setBounds( 35, 430, 100, 30 );
     
     String info = "Игрок управляет длинным, тонким существом, напоминающим змею, " +
     		      "которое ползает по плоскости, собирая предметы, избегая столкновения" +
@@ -254,6 +285,7 @@ public class Menu {
     exitButton.addListener( SWT.Selection, exitListener );
     backButton.addListener( SWT.Selection, backListener );        
   }
+  
   /**  displayed starting settings the game*/
   public static void openStartSettings( final Shell shell, final Display display ) {
 	for ( Control kid : shell.getChildren( ) ) {
@@ -297,94 +329,115 @@ public class Menu {
 	startButton.setText( "&START" );
 	startButton.setBackground( red );
 	startButton.setForeground( black );
-	startButton.setBounds( 155, 280, 100, 50 );
+	startButton.setBounds( 155, 430, 100, 30 );
 	
-	Button loadButton  =  new Button( shell, SWT.PUSH );
-	loadButton.setText( "&LOAD GAME" );
-	loadButton.setBackground( red );
-	loadButton.setForeground( black );
-	loadButton.setBounds( 35, 280, 100, 50 );
-	
-	Button botButton  =  new Button( shell, SWT.PUSH );
-	botButton.setText( "BOT MODE" );
-	botButton.setBackground( white );
-	botButton.setForeground( black );
-	botButton.setBounds( 155, 350, 100, 50);
-	Listener  botListener  =  new Listener( ) {
-	  public void handleEvent( Event event ) {
-		 play.open( shell, display, "bot", 2,botMode);
-		 openMenu(shell,display);
-		 shell.setVisible( false );
-      }
-    };
 	Button backButton  =  new Button( shell, SWT.PUSH );
 	backButton.setText( "BACK" );
 	backButton.setBackground( white );
 	backButton.setForeground( black ); 
-	backButton.setBounds( 35, 350, 100, 50 );
+	backButton.setBounds( 35, 430, 100, 30);
 	Listener backListener  =  new Listener( ) {
       public void handleEvent( Event event ) {
 	   	openMenu( shell, display );
 	  }
 	};
-	Listener loadListener  =  new Listener( ) {
-	      public void handleEvent( Event event ) {
-	    	  String name="";
-	    	  File file  =  new File( "names.txt" );
-			  try {
-			    Scanner sc = new Scanner(file);
-			    name = sc.nextLine();
-			    level = sc.nextInt();
-			    sc.close();
-			    }
-			    catch (IOException  e) {
-			        e.printStackTrace();
-			    }
-			 play.open( shell, display, name, level,loadMode);
-			 openMenu(shell,display);
-			 shell.setVisible( false );
-			     }      
-		};	
 	Listener startListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
         String name;
         if ( playerName.getCaretPosition( ) == 0 )
 	      name = "( no name )";
 	    else name = playerName.getText( );
-	      play.open( shell, display, name, level,playerMode );
+	      play.open( shell, display, name, level,playerMode,"");
 	    openMenu(shell,display);
 	    shell.setVisible( false );
 	  }
 	};
+	Button genButton  =  new Button( shell, SWT.PUSH );
+	genButton.setText( "GENERATE" );
+	genButton.setBackground( white );
+	genButton.setForeground( black ); 
+	genButton.setBounds( 35, 230, 100, 30);
+	Listener genListener  =  new Listener( ) {
+      public void handleEvent( Event event ) {
+	  }
+	};
+	genButton.addListener( SWT.Selection, genListener );
 	startButton.addListener( SWT.Selection, startListener );
-	loadButton.addListener( SWT.Selection, loadListener );
-	botButton.addListener( SWT.Selection, botListener );
 	backButton.addListener( SWT.Selection, backListener );
   }
   /**  It reads the data from the file and fills the high score table*/
-  public static void fillTable( Table table, String filename, int k ) {   //считывание из файла и запись в таблицу
-	String name[] = new String[10], rec[] = new String[10];
-    try{
-	  BufferedReader myfile  =  new BufferedReader ( new FileReader( filename ) );
-	  try {
-		for( int i = 0; i<10; i++ ) {
-		  name[i] = myfile.readLine( );
-		  rec[i] = myfile.readLine( );
-		}
-      } finally {
-		  myfile.close( );
-		}
-	} catch( IOException e ) {
-	    throw new RuntimeException( e );
+  public static void fillTable( Table table, int level,int titleLenght,int criterion) {   //считывание из файла и запись в таблицу
+    File fName  =  new File( "files/names.txt" );
+	int []levelNumbers=new int[3];
+    try {
+	  Scanner repSc = new Scanner( fName );
+	  for( int i = 0 ; i<3 ; i++ )
+	    levelNumbers[i]=repSc.nextInt();
+	  repSc.close();
+	}
+	catch (IOException  e) { }
+	int Size=levelNumbers[level]-1;
+	fileNames=new String[Size];
+	String []playerNames=new String[Size];
+	int []scores=new int[Size];
+	String []fileNamesJ=new String[Size];
+	String []playerNamesJ=new String[Size];
+	int []scoresJ=new int[Size];
+	for (int i=0 ; i<Size ; i++) {
+	  fileNames[i]=fileNamesJ[i]="files/"+String.valueOf(level)+"_"+String.valueOf(i+1)+".txt";
+	try {
+	  SeekableByteChannel fHelpChannel = Files.newByteChannel(Paths.get(fileNames[i]));
+	  int fileSize = (int) fHelpChannel.size();
+	  ByteBuffer bufferRead = ByteBuffer.allocate(fileSize);	
+	  fHelpChannel.read(bufferRead);
+	  bufferRead.flip();
+	  char temp;
+	  String name="";
+	  scores[i]=scoresJ[i]=bufferRead.getInt();
+	  while ( true ) {
+	  	temp = bufferRead.getChar();
+	     if ( temp == '+')
+		    	break;
+		    	name += String.valueOf(temp);
+	  }  
+	  fHelpChannel.close();
+	  playerNames[i]=playerNamesJ[i]=name;
+	} catch (IOException e) {
+	    e.printStackTrace();
 	  }
-    for ( int i  =  0; i < 10; i++ ) {
+    }  
+	long startTimeSc=0,endTimeSc=0,startTimeJ=0,endTimeJ=0;
+	if ( Size > 0) {
+	  if(criterion==0) {
+	 	startTimeSc = System.nanoTime();
+	    Sorting sortReplays = new Sorting();
+	    sortReplays.SCsort(fileNames, playerNames, scores);
+	    endTimeSc = System.nanoTime()-startTimeSc;
+	    startTimeJ = System.nanoTime();
+	    SortingJ sortJava=new SortingJ();
+	 	sortJava.SCsort(scoresJ, fileNamesJ, playerNamesJ, 0, Size-1);  
+	 	endTimeJ = System.nanoTime()-startTimeJ;
+	  } else  {
+	      startTimeSc = System.nanoTime();
+	 	  Sorting sortReplays = new Sorting();
+	 	  sortReplays.AZsort(fileNames, playerNames, scores);
+	 	  endTimeSc = System.nanoTime()-startTimeSc;
+	 	  startTimeJ = System.nanoTime();
+	 	  SortingJ sortJava=new SortingJ();
+	 	  sortJava.AZSort(scoresJ, fileNamesJ, playerNamesJ, 0, Size-1);  
+	 	  endTimeJ = System.nanoTime()-startTimeJ;
+	    }	
+	}
+	scalaLabel.setText( "Scala time (ns): " + String.valueOf(endTimeSc));
+	javaLabel.setText( "Java time (ns): " + String.valueOf(endTimeJ));		   
+    for ( int i  =  0; i < fileNames.length; i++ ) {
       TableItem item  =  new TableItem( table, SWT.NONE );
-      item.setText( 0, name[i] );
-      item.setText( 1, rec[i] );
+      item.setText( 0, playerNames[i] );
+      item.setText( 1, String.valueOf(scores[i]));
     }
-    for ( int i = 0; i<k; i++ ) {
+    for ( int i = 0; i<titleLenght; i++ ) {
       table.getColumn ( i ).pack ( );
     }
-    table.setBounds( 45, 40, 200, 280 );
-  }
+    table.setBounds( 45, 80, 200, 280 );
+  }  
 }

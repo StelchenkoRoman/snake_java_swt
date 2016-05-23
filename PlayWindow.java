@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class PlayWindow {         //игровое окно
   private final int IMAGE_WIDTH  =  20;
+  private  final int botMode = 1;
   private int keyPause = 262144, TIMER_INTERVAL = 100;
   private Label scoreLabel;
   private Canvas canvas;
@@ -73,32 +74,25 @@ public class PlayWindow {         //игровое окно
 	      }
 	      if ( MySnake.getMode() == 3 && !MySnake.getFileFlag() ) {
 	    	pauseButton.setVisible(false);
-	    	newGameButton.setVisible(true);
 	    	return;
 	      }
 	      canvas.redraw();
+	      if(MySnake.keyFlag==false){
+			  MySnake.keyFlag=true;
+		  }
 	    }
 	  display.timerExec( TIMER_INTERVAL, this );
 	}
   };
   /** displays in the window play field */
-  public  void open( final Shell mainShell, final Display display, final String name, final int level,final int mode ) {
+  public  void open( final Shell mainShell, final Display display, final String name, final int level,final int mode,String fileNameRep) {
 	for ( Control kid : shell.getChildren( ) ) {
 	  kid.dispose( );
 	}
 	shell.setText( "Snake" );
 	newGameFlag = false;
-	MySnake.startValue( level,mode );
+	MySnake.startValue( level,mode,name ,fileNameRep);
 	playerName = name;
-	if ( level == 0 ) {
-	  nameFile = "HARD.txt";
-    }
-	if ( level == 1 ) {
-	  nameFile = "NORMAL.txt";
-	}
-	if ( level == 2 ) {
-	  nameFile = "EASY.txt";
-	}
 	Color red  =  new Color ( device, 250, 128, 114 );
 	Color white  =  new Color ( device, 255, 255, 255 );
 	Color black  =  new Color ( device, 0, 0, 0 );
@@ -130,9 +124,7 @@ public class PlayWindow {         //игровое окно
 	  public void handleEvent(Event event) {
 		if ( MySnake.getMode() != 3) {
 		  if( MySnake.getLife() == true ) {
-		   	MySnake.save(playerName);
 		  } else
-		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName );
 		  MySnake.repFileClose();
 	    }
 	  }
@@ -156,9 +148,7 @@ public class PlayWindow {         //игровое окно
 	  public void handleEvent( Event event ) {
 		if ( MySnake.getMode() != 3) {
 		  if( MySnake.getLife() == true ) {
-		  	MySnake.save(playerName);
 		  } else
-		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName );
 		  MySnake.repFileClose();
 		}
 		System.exit( 0 );
@@ -170,10 +160,8 @@ public class PlayWindow {         //игровое окно
 	    mainShell.setVisible( true );
 	    if ( MySnake.getMode() != 3) {
 	      if( MySnake.getLife() == true ) {
-	    	MySnake.save(playerName);
-	      } else
-		      recordsRefresh( nameFile, MySnake.getPoints( ), playerName );
-	      MySnake.repFileClose();
+	     } else
+		   MySnake.repFileClose();
 	    }
 	 	shell.setVisible( false );
 		return;
@@ -187,8 +175,7 @@ public class PlayWindow {         //игровое окно
 	newGameButton.setVisible( false );
 	Listener  newGameListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
-	    recordsRefresh( nameFile, MySnake.getPoints( ), playerName );
-		open(mainShell,display,playerName,level,mode);
+	    open(mainShell,display,playerName,level,mode,"");
 		mainShell.setVisible( false );
 	  }
 	};
@@ -197,7 +184,6 @@ public class PlayWindow {         //игровое окно
 	exitButton.addListener( SWT.Selection, exitListener );
 	toMenuButton.addListener( SWT.Selection, menuListener );
 	continueButton.addListener( SWT.Selection, continueListener );
-	
 	scoreLabel  =  new Label( shell, SWT.None );
 	scoreLabel.setText( "Score :  "+ MySnake.getPoints( ) );
 	scoreLabel.setBounds( 10, 420, 70, 20 );
@@ -207,6 +193,7 @@ public class PlayWindow {         //игровое окно
     final  Image image  =  new Image( shell.getDisplay( ), "/home/green/final vers1.png" );
     final  Image image2  =  new Image( shell.getDisplay( ), "/home/green/d.gif" );
     final  Image image3  =  new Image( shell.getDisplay( ), "/home/green/index.jpeg" ); 
+   
     canvas.addPaintListener( new PaintListener( ) {    // отрисовка игрового поля
 	  public void paintControl( PaintEvent event ) {
 	    int tx = 0;    //координаты  требуемой части  изображения для отображения элемента змейки
@@ -281,62 +268,21 @@ public class PlayWindow {         //игровое окно
     }); 
 	Listener listenerKeyboard  =  new Listener( ) { // действие на нажатие кнопок
 	  public void handleEvent( Event e ) {
-		if ( e.keyCode == keyPause ) {
+		  if ( e.keyCode == keyPause ) {
 		  pauseFlag = !pauseFlag;
 		}
-		if ( !pauseFlag )
-	      MySnake.keyPressed( e.keyCode );    //e, keyCode - код нажатой клавиши
+		if ( !pauseFlag && MySnake.keyFlag == true )
+		  MySnake.keyFlag=false;
+		  MySnake.keyPressed( e.keyCode );    //e, keyCode - код нажатой клавиши
+	      
 	  }
 	};
 	Display.getCurrent( ).addFilter( SWT.KeyDown, listenerKeyboard );
 	shell.open( );
+	 	 
 	display.timerExec( 1000, runnable );	//запуск движения змейки через секунду
  }
-  /** this method update records table*/
-  public  void recordsRefresh( String filename, int points, String playerName ) {  //метод обновления рекордов
-    String name[] = new String[10], record[] = new String[10];
-	try{
-	  BufferedReader myfile  =  new BufferedReader ( new FileReader( filename ) );
-	  try {
-		for ( int i = 0; i<10; i++ ) {  //считывание инф-и из фалйа в массивы имен и рекордов
-		  name[i] = myfile.readLine( );
-		  record[i] = myfile.readLine( );
-		}
-      } finally {
-		  myfile.close( ); // закрытие файла
-		}
-	} catch ( IOException e ) {
-	    throw new RuntimeException( e );
-	  }
-	if ( points>= Integer.parseInt( record[9].trim( ) ) ) { //сравнение и сортировка набранных очков с эл-ми массива рекордов
-	  for ( int i = 9; i>= 0; i-- ) {
-	    if ( points>= Integer.parseInt( record[i].trim( ) ) &&
-	  	   ( i == 0 || points<Integer.parseInt( record[i-1].trim( ) ) ) ) {
-	      for ( int j = 9; j>i; j-- ) {
-	        name[j] = name[j-1];
-	    	record[j] = record[j-1];
-	      }
-	      name[i] = playerName;
-	      record[i] = String.valueOf( points );
-	      break;
-	    }
-	  }
-	File file  =  new File( filename );
-	try {
-	  PrintWriter out  =  new PrintWriter( file.getAbsoluteFile( ) );  //PrintWriter обеспечит возможности записи в файл
-	  try {
-	    for ( int i = 0; i<10; i++ ) {   //запись текста в файл
-	      out.println( name[i] );
-	      out.println( record[i] );
-	    }
-	  } finally {
-	      out.close( );    //закрытие файла
-	    }
-	} catch ( IOException e ) {
-	    throw new RuntimeException( e );
-	  }
-	}
-  }
+ 
   /** displays game over field*/
   public  void gameOver( final Shell shell, final Display display, String points, final Shell mainShell ) { //конец игры  
    	canvas.dispose( );

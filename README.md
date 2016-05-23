@@ -1,1 +1,0 @@
-# snake_java_swt
