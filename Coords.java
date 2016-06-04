@@ -8,6 +8,11 @@ public class Coords {   // класс с координатами x и y
   public  int x;
   /** Coordinate y. */
   public  int y;
+  Coords () {}
+  Coords ( int xValue, int yValue ) {
+		x = xValue;
+		y = yValue;	  
+  }
   /** this method set value x and y . */
   public void value( int xValue, int yValue ) {   //метод установки координат
 	x = xValue;

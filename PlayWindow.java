@@ -3,6 +3,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -17,7 +21,14 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 
+import java.nio.channels.SeekableByteChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 /**
  * this class describes Play window
  * @author green
@@ -34,6 +45,7 @@ public class PlayWindow {         //игровое окно
   private String playerName, nameFile;
   private Button pauseButton, newGameButton;
   private boolean pauseFlag, newGameFlag;
+  private static Color buttonColor,backGroundColor,textColor;
   private Snake MySnake = new Snake( );    //объект класса Snake
   /**  Thread-server class*/
   class SnakeAnimate extends Thread
@@ -48,23 +60,27 @@ public class PlayWindow {         //игровое окно
   PlayWindow ( final Shell mainShell1, final Display display1 ) {   //настройка игрового окна
     display = display1;
     mainShell = mainShell1;
+   
+    textColor = new Color ( device, 0, 0, 0);
+	buttonColor  =  new Color ( device, 255, 218, 185 );
+	backGroundColor = new Color ( device, 224, 238, 224  );
+	
     shell  =  new Shell( mainShell1, SWT.APPLICATION_MODAL | SWT.SHELL_TRIM );
     shell.setText( "Snake" );
     shell.setSize( 620, 470 );
     shell.setMinimumSize( 620, 470 );
     pauseFlag = false;
-    Color yellow  =  new Color ( device, 255, 250, 205 );
-    shell.setBackground( yellow );
+   shell.setBackground( backGroundColor );
   }
   /** Client-thread, here is updated graphical field, and checks the end of the game*/
   final Runnable runnable  =  new Runnable( ) {
 	public void run( ) {
       if ( !shell.isDisposed( ) )
 	    if ( !pauseFlag ) {
-		  SnakeAnimate sA = new SnakeAnimate();
-		  sA.run();
+		  SnakeAnimate snAnim = new SnakeAnimate();
+		  snAnim.run();
 		  try {
-			sA.join();
+			snAnim.join();
 		  } catch (InterruptedException e) {
 			e.printStackTrace();
 			};
@@ -93,32 +109,29 @@ public class PlayWindow {         //игровое окно
 	newGameFlag = false;
 	MySnake.startValue( level,mode,name ,fileNameRep);
 	playerName = name;
-	Color red  =  new Color ( device, 250, 128, 114 );
-	Color white  =  new Color ( device, 255, 255, 255 );
-	Color black  =  new Color ( device, 0, 0, 0 );
-    Button exitButton  =  new Button( shell, SWT.PUSH );
+	Button exitButton  =  new Button( shell, SWT.PUSH );
 	exitButton.setText( "EXIT" );
-	exitButton.setBackground( red );
-	exitButton.setForeground( black );
+	exitButton.setBackground( buttonColor );
+	exitButton.setForeground( textColor );
 	exitButton.setBounds( 500, 414, 100, 25 );
 	
 	final Button continueButton  =  new Button( shell, SWT.PUSH );
 	continueButton.setText( "CONTINUE" );
-	continueButton.setBackground( red );
-	continueButton.setForeground( black );
+	continueButton.setBackground( buttonColor );
+	continueButton.setForeground( textColor );
 	continueButton.setBounds( 260, 414, 100, 25 );
 	continueButton.setVisible( false );
 	
 	pauseButton  =  new Button( shell, SWT.PUSH );
 	pauseButton.setText( "PAUSE" );
-	pauseButton.setBackground( red );
-	pauseButton.setForeground( black );
+	pauseButton.setBackground( buttonColor );
+	pauseButton.setForeground( textColor );
 	pauseButton.setBounds( 260, 414, 100, 25 );
 	
 	Button toMenuButton  =  new Button( shell, SWT.PUSH );
 	toMenuButton.setText( "MENU" );
-	toMenuButton.setBackground( red );
-	toMenuButton.setForeground( black );
+	toMenuButton.setBackground( buttonColor );
+	toMenuButton.setForeground( textColor );
 	toMenuButton.setBounds( 380, 414, 100, 25 );
 	shell.addListener(SWT.Close, new Listener() {
 	  public void handleEvent(Event event) {
@@ -169,8 +182,8 @@ public class PlayWindow {         //игровое окно
 	};
 	newGameButton  =  new Button( shell, SWT.PUSH );
 	newGameButton.setText( "RESTART" );
-	newGameButton.setBackground( red );
-	newGameButton.setForeground( black );
+	newGameButton.setBackground( buttonColor );
+	newGameButton.setForeground( textColor );
 	newGameButton.setBounds( 260, 414, 100, 25 );
 	newGameButton.setVisible( false );
 	Listener  newGameListener  =  new Listener( ) {
@@ -189,8 +202,7 @@ public class PlayWindow {         //игровое окно
 	scoreLabel.setBounds( 10, 420, 70, 20 );
 	canvas  =  new Canvas( shell, SWT.NO_BACKGROUND );
 	canvas.setBounds( 7, 10, 600, 400 );
-	canvas.setBackground( white );
-    final  Image image  =  new Image( shell.getDisplay( ), "/home/green/final vers1.png" );
+	final  Image image  =  new Image( shell.getDisplay( ), "/home/green/final vers1.png" );
     final  Image image2  =  new Image( shell.getDisplay( ), "/home/green/d.gif" );
     final  Image image3  =  new Image( shell.getDisplay( ), "/home/green/index.jpeg" ); 
    
@@ -219,7 +231,6 @@ public class PlayWindow {         //игровое окно
 	    for ( int i = 0; i<MySnake.getSize( ); i++ ) {             //отрисовка змейки
 	      segx = MySnake.getSnakeCoords( i ).x;   //текущее значение координат элемента змейки
 	      segy = MySnake.getSnakeCoords( i ).y;
-	      event.gc.setBackground( event.display.getSystemColor( SWT.COLOR_RED ) );
 	      if ( i  ==  0 ) {      // установка tx и ty для головы змейки
 	        if ( MySnake.getDirection( ) == 1  && MySnake.getDirectionValue( ).x>0 )	{
 	          tx = 4; ty = 0;
@@ -281,8 +292,7 @@ public class PlayWindow {         //игровое окно
 	shell.open( );
 	 	 
 	display.timerExec( 1000, runnable );	//запуск движения змейки через секунду
- }
- 
+  }
   /** displays game over field*/
   public  void gameOver( final Shell shell, final Display display, String points, final Shell mainShell ) { //конец игры  
    	canvas.dispose( );
@@ -297,4 +307,227 @@ public class PlayWindow {         //игровое окно
 	gameOverLabel.setBounds( 10, 420, 100, 30 );
 	newGameButton.setVisible( true );
   }
+  public void statisticsOpen(final Shell mainShell, final Display display, final String name, final int level,final int mode,String fileNameRep ) {
+	for ( Control kid : shell.getChildren( ) ) {
+	  kid.dispose( );
+	}
+	shell.setText( "Statistics" );
+	Button exitButton  =  new Button( shell, SWT.PUSH );
+	exitButton.setText( "EXIT" );
+	exitButton.setBackground( buttonColor );
+	exitButton.setForeground( textColor );
+	exitButton.setBounds( 500, 414, 100, 25 );
+		
+	Button toMenuButton  =  new Button( shell, SWT.PUSH );
+	toMenuButton.setText( "MENU" );
+	toMenuButton.setBackground( buttonColor );
+	toMenuButton.setForeground( textColor );
+	toMenuButton.setBounds( 380, 414, 100, 25 );
+	
+	Listener  exitListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {
+		System.exit( 0 );
+	  }
+	};
+	Listener  menuListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {
+	    mainShell.setVisible( true );
+	 	shell.setVisible( false );
+		return;
+      }
+	};
+	exitButton.addListener( SWT.Selection, exitListener );
+	toMenuButton.addListener( SWT.Selection, menuListener );
+	scoreLabel  =  new Label( shell, SWT.None );
+	scoreLabel.setBounds( 5, 350, 300, 20 );
+	canvas  =  new Canvas( shell, SWT.NO_BACKGROUND );
+	canvas.setBounds( 5, 5, 300, 200 );
+    final  Image image2  =  new Image( shell.getDisplay( ), "images/d.gif" );
+    final  Image []statImages=new Image[5];
+    statImages[0]  =  new Image( shell.getDisplay( ), "images/stat1.png" );
+    statImages[1]  =  new Image( shell.getDisplay( ), "images/stat2.png" );
+    statImages[2]  =  new Image( shell.getDisplay( ), "images/stat3.png" );
+    statImages[3]  =  new Image( shell.getDisplay( ), "images/stat4.png" );
+    statImages[4]  =  new Image( shell.getDisplay( ), "images/stat5.png" );
+    
+    ArrayList<Coords> snakeStatCoords = new ArrayList<Coords>( );
+  	ArrayList<Coords> foodStatCoords = new ArrayList<Coords>( );
+  	final int [][]statCount; 
+  	final int [][]statFoodCount; 
+    Coords maxHeadCoords=new Coords(0,0);
+    Coords maxFoodCoords=new Coords(0,0);   
+    Statistics stat= new Statistics();
+    int max,maxFood;
+  	try {	    
+      SeekableByteChannel fHelpChannel = Files.newByteChannel(Paths.get(fileNameRep));
+  	  int fileSize = (int) fHelpChannel.size();
+  	  ByteBuffer bufferRead = ByteBuffer.allocate(fileSize);	
+  	  fHelpChannel.read(bufferRead);
+  	  bufferRead.flip();
+  	  char temp;
+  	  String fileName="";
+  	  int totalPoints=bufferRead.getInt();
+  	  scoreLabel.setText(String.valueOf(totalPoints)+ " -   total points" );
+  	  while ( true ) {
+  		temp = bufferRead.getChar();
+  	    if(temp == '+')
+  	      break;
+  		fileName += String.valueOf(temp);
+        } 
+  	  Coords foodStCoordss = new Coords();
+  	  foodStCoordss.x=bufferRead.getInt();
+  	  foodStCoordss.y=bufferRead.getInt();
+  	  foodStatCoords.add(foodStCoordss);  
+  	  while ( bufferRead.hasRemaining() ) {
+        Coords readSnCoords = new Coords();
+	    readSnCoords.x=bufferRead.getInt();
+	    readSnCoords.y=bufferRead.getInt();
+	    if ( readSnCoords.x==foodStatCoords.get(foodStatCoords.size()-1).x && readSnCoords.y==foodStatCoords.get(foodStatCoords.size()-1).y) {
+	      if ( !bufferRead.hasRemaining() )
+	  	    break;
+	      Coords foodStCoords = new Coords();
+		  foodStCoords.x=bufferRead.getInt();
+		  foodStCoords.y=bufferRead.getInt();
+		  foodStatCoords.add(foodStCoords);  
+	    }
+	    snakeStatCoords.add(readSnCoords);   
+      }
+    } catch (IOException e) {
+     	e.printStackTrace();
+      }
+ 
+    statCount=stat.get(snakeStatCoords);
+    statFoodCount= stat.get(foodStatCoords);	 
+    max=stat.maxCount(statCount, maxHeadCoords);
+    maxFood=stat.maxCount(statFoodCount, maxFoodCoords); 
+    final int maxHead=max;
+	canvas.setBackground(backGroundColor);
+    canvas.addPaintListener( new PaintListener( ) {    // отрисовка игрового поля
+	  public void paintControl( PaintEvent event ) {
+	    for ( int i = 0; i<300; i+= 10 ) {                             //отрисовка границ поля
+	      event.gc.drawImage( image2, 0, 0, 256, 256, i, 0, 10, 10 );
+	      event.gc.drawImage( image2, 0, 0, 256, 256, i, 190, 10, 10 );
+	    }
+	    for ( int i = 0; i<200; i+= 10 ) {                             //отрисовка границ поля
+		  event.gc.drawImage( image2, 0, 0, 256, 256, 0, i, 10, 10 );
+		  event.gc.drawImage( image2, 0, 0, 256, 256, 290, i, 10, 10 );
+	    }    
+		Image statImage; 
+		for ( int i = 0; i<28; i++ )                    // отрисовка поля змейки
+		  for ( int j = 0; j<18; j++ ) {
+		   	if ( maxHead<5 )
+			  statImage = statImages[statCount[i][j]];
+		  	else {
+	  	      if(statCount[i][j]>4*maxHead/5 && maxHead>3)
+				statImage = statImages[4];     
+		  	  else if(statCount[i][j]>3*maxHead/5 && maxHead>2)
+			    statImage = statImages[3];     
+		  	  else if(statCount[i][j]>2*maxHead/5 && maxHead>1)
+				statImage = statImages[2];     
+		  	  else if(statCount[i][j]>maxHead/5 && maxHead>0)
+    			statImage = statImages[1];     
+      	 	  else  statImage = statImages[0];     
+			}
+		    event.gc.drawImage( statImage, i*10+10, j*10+10 );    
+   	      }
+	    }
+      });
+	  Label statImage1Label  =  new Label( shell, SWT.None );
+	  statImage1Label.setBounds( 5, 215, 10, 10 );
+	  statImage1Label.setImage(statImages[0]);
+	  Label statText1Label  =  new Label( shell, SWT.None );
+	  statText1Label.setBounds(20, 210, 100, 20 );
+	    
+	  Label statImage2Label  =  new Label( shell, SWT.None );
+	  statImage2Label.setBounds( 5, 235, 10, 10 );
+	  statImage2Label.setImage(statImages[1]);
+	  Label statText2Label  =  new Label( shell, SWT.None );
+	  statText2Label.setBounds(20, 230, 100, 20 );
+	  
+	  Label statImage3Label  =  new Label( shell, SWT.None );
+	  statImage3Label.setBounds( 5, 255, 10, 10 );
+	  statImage3Label.setImage(statImages[2]);
+	  Label statText3Label  =  new Label( shell, SWT.None );
+	  statText3Label.setBounds(20, 250, 100, 20 );
+	  
+	  Label statImage4Label  =  new Label( shell, SWT.None );
+	  statImage4Label.setBounds( 5, 275, 10, 10 );
+	  statImage4Label.setImage(statImages[3]);
+	  Label statText4Label  =  new Label( shell, SWT.None );
+	  statText4Label.setBounds(20, 270, 100, 20 );
+	  
+	  Label statImage5Label  =  new Label( shell, SWT.None );
+	  statImage5Label.setBounds( 5, 295, 10, 10 );
+	  statImage5Label.setImage(statImages[4]);
+	  Label statText5Label  =  new Label( shell, SWT.None );
+	  statText5Label.setBounds(20, 290, 100, 20 );
+	  
+	  if ( max<5 ) {
+	   	statText1Label.setText(" -   "+0);
+	  	statText2Label.setText(" -   "+1);
+	   	statText3Label.setText(" -   "+2);
+	   	statText4Label.setText(" -   "+3);
+	   	statText5Label.setText(" -   "+4);
+	  }
+	  else {
+	    statText1Label.setText(" -   "+0+"-"+max/5);
+	    statText2Label.setText(" -   "+(max/5+1)+"-"+2*max/5);
+	    statText3Label.setText(" -   "+(2*max/5+1)+"-"+3*max/5);
+	    statText4Label.setText(" -   "+(3*max/5+1)+"-"+4*max/5);
+	    statText5Label.setText(" -   "+(4*max/5+1)+"-"+max);
+	  }
+	  
+	  Label hauntedLabel  =  new Label( shell, SWT.None );
+	  hauntedLabel.setBounds(5, 310, 300, 20 );
+	  hauntedLabel.setText(max+"   -   times,haunted field { "+maxHeadCoords.x*20+ " ; "+maxHeadCoords.y*20+" }");
+      Label hauntedFoodLabel  =  new Label( shell, SWT.None );
+	  hauntedFoodLabel.setBounds(5, 330, 300, 20 );
+	  hauntedFoodLabel.setText(maxFood+"   -   times,haunted food field { "+maxFoodCoords.x*20+ " ; "+maxFoodCoords.y*20+" }");
+    
+      Table table  =  new Table( shell, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION );
+	  table.setLinesVisible( true );
+	  table.setHeaderVisible( true );
+	  final  String[] titles  =  { "{   x;y    }","snake","food" };
+	  for ( int i  =  0;  i < titles.length;  i++ ) {
+	  TableColumn column  =  new TableColumn( table, SWT.CENTER);
+	  column.setText( titles[i] );
+	}
+	for ( int i = 0; i<28; i++ )                    // отрисовка поля змейки
+	  for ( int j = 0; j<18; j++ ) {
+	    TableItem item  =  new TableItem( table, SWT.NONE );
+	    item.setText( 0,String.valueOf(i*20)+" ; "+String.valueOf(j*20));
+	    item.setText( 1, String.valueOf(statCount[i][j]));
+	    item.setText( 2,String.valueOf(statFoodCount[i][j]));   
+	  }
+	  for ( int i = 0; i<titles.length; i++ ) {	  
+	    table.getColumn ( i ).pack ( );
+	    table.getColumn(i).setWidth(83);
+	  }
+	  table.setBounds( 340, 5, 250, 400 );
+  shell.open( );	
+}
+
+public  void generate( final Shell mainShell, final int level,final int mode, int numbers) {
+	Random random=new Random();
+	String botName;
+	int Num=numbers;
+	for(int i=0;i<Num;i++) {
+		numbers=i;
+	newGameFlag = false;
+	botName="bot"+String.valueOf((1+random.nextInt( 20 )));			
+	MySnake.startValue( level,mode,botName ,"");
+	if ( !MySnake.getLife( ) ) {                     //если конец игры
+	    gameOver( shell, display, String.valueOf( MySnake.getPoints( ) ), mainShell );
+	    return;
+    }
+	while(true){
+	if( MySnake.getLife() == true ) {
+		MySnake.animate(null);  
+		}
+	else{
+		MySnake.repFileClose();
+	break;}
+	}
+}
+}
 }

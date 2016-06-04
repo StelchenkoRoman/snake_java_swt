@@ -16,6 +16,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -24,11 +25,14 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+
+//import PlayWindow.SnakeAnimate;
 
 /**
  * this class describes menu window
@@ -42,6 +46,8 @@ public class Menu {
   private static int level,criterion;
   private static PlayWindow play;
   private static String []fileNames;
+  private static Color textColor, buttonColor,backGroundColor;
+  private static Device device  =  Display.getCurrent ( );
   private static int playerMode = 0 , botMode = 1, loadMode = 2, replayMode = 3;
   Menu( ) {												//конструктор класса Menu
 	final  Display display  =  new Display( );
@@ -63,21 +69,20 @@ public class Menu {
 	  kid.dispose( ); 
 	}
 	shell.setText( "Snake" );
-	Color red  =  display.getSystemColor( SWT.COLOR_RED );
-	Color white  =  display.getSystemColor( SWT.COLOR_WHITE );
-	Color green  =  display.getSystemColor( SWT.COLOR_GREEN );
-	Color yellow  =  display.getSystemColor( SWT.COLOR_YELLOW );
-	Color cyan  =  display.getSystemColor( SWT.COLOR_CYAN );
-	Color black  =  display.getSystemColor( SWT.COLOR_BLACK );
-	shell.setBackground( white );	      
+	textColor = new Color ( device, 0, 0, 0);
+	buttonColor  =  new Color ( device, 255, 218, 185 );
+	//backGroundColor = new Color ( device, 173, 216, 230  );
+	backGroundColor = new Color ( device, 224, 238, 224  );
+	
+	shell.setBackground( backGroundColor );	      
 	Label image_label  =  new Label( shell, SWT.NONE );               // загрузка кортинки
-	image_label.setImage( new Image( display, "/home/green/im.png" ) );
+	image_label.setImage( new Image( display, "images/home.png" ) );
 	image_label.setBounds( 25, 20, 234, 148 );
 	Button start_button  =  new Button( shell, SWT.PUSH );            //кнопка старт
 	start_button.setText( "&START GAME" );                        //текст кнопки
 	start_button.setBounds( 40, 170, 200, 50 );                   //размер и положение кнопки
-	start_button.setBackground( green );                         //цвет фона
-	start_button.setForeground( black );                         //цвет текста
+	start_button.setBackground( buttonColor );                         //цвет фона
+	start_button.setForeground( textColor );                         //цвет текста
 	Listener startListener  =  new Listener( ) {                // действие на нажатие кнопки
 	  public void handleEvent( Event event ) {
         openStartSettings( shell, display );
@@ -87,8 +92,8 @@ public class Menu {
 	
 	Button rec_button  =  new Button( shell, SWT.None );    //кнопка рекорды
 	rec_button.setText( "&RECORDS" );
-	rec_button.setBackground( cyan );
-	rec_button.setForeground( black );
+	rec_button.setBackground( buttonColor );
+	rec_button.setForeground( textColor );
 	rec_button.setBounds( 40, 280, 200, 50 );
 	Listener recListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
@@ -99,8 +104,8 @@ public class Menu {
 
 	Button infoButton  =  new Button( shell, SWT.None );   //кнопка информация
     infoButton.setText( "&INFO" );
-	infoButton.setBackground( yellow );
-	infoButton.setForeground( black );
+	infoButton.setBackground( buttonColor );
+	infoButton.setForeground( textColor );
 	infoButton.setBounds( 40, 335, 200, 50 );
 	Listener infoListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
@@ -111,23 +116,35 @@ public class Menu {
 
 	Button botButton  =  new Button( shell, SWT.PUSH );
 	botButton.setText( "BOT MODE" );
-	botButton.setBackground( white );
-	botButton.setForeground( black );
+	botButton.setBackground( buttonColor );
+	botButton.setForeground( textColor );
 	botButton.setBounds( 40, 225, 200, 50);
 	Listener  botListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
-		 Random random=new Random();
-		 String botName="bot"+String.valueOf((1+random.nextInt( 20 )));
-		 play.open( shell, display, botName, 2,botMode,"");
-		 openMenu(shell,display);
-		 shell.setVisible( false );
-      }
+		     Random random=new Random();
+			 String botName="bot"+String.valueOf((1+random.nextInt( 20 )));
+			 play.open( shell, display, botName, 2,botMode,"");
+			 openMenu(shell,display);
+			 shell.setVisible( false ); 
+			 }
     };
     botButton.addListener( SWT.Selection, botListener );
-	
+
+	Button genButton  =  new Button( shell, SWT.PUSH );
+	genButton.setText( "GEN" );
+	genButton.setBackground( buttonColor );
+	genButton.setForeground( textColor );
+	genButton.setBounds( 250, 170, 40, 20);
+	genButton.setVisible(false);
+	Listener  genListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {	
+		  openGenerate(shell,display);
+	  }
+    };
+    genButton.addListener( SWT.Selection, genListener );    
 	Button exitButton  =  new Button( shell, SWT.PUSH );   //кнопка выход
-	exitButton.setBackground( red );
-	exitButton.setForeground( black );
+	exitButton.setBackground( buttonColor );
+	exitButton.setForeground( textColor );
 	exitButton.setBounds( 40, 390, 200, 50 );
 	exitButton.setText( "&EXIT" );
 	Listener exitListener  =  new Listener( ) {
@@ -142,12 +159,7 @@ public class Menu {
 	for ( Control kid : shell.getChildren( ) ) {
 	  kid.dispose( );
 	}
-    Color cyan  =  display.getSystemColor( SWT.COLOR_CYAN );
-    Color red   =  display.getSystemColor( SWT.COLOR_RED );
-    Color black  =  display.getSystemColor( SWT.COLOR_BLACK );
-    Color white  =  display.getSystemColor( SWT.COLOR_WHITE );
-    shell.setForeground( cyan );
-    shell.setBackground( cyan );
+    shell.setBackground( backGroundColor );
     shell.setText( "RECORDS" );
     final  String filename[] = {"EASY.txt", "NORMAL.txt", "HARD.txt"};   // сохранение имен файлов в массив  
     Label combo_label  =  new Label( shell, SWT.None );
@@ -155,6 +167,7 @@ public class Menu {
     combo_label.setBounds( 55, 10, 70, 30 );
     final  Combo levelCombo  =  new Combo( shell, SWT.DROP_DOWN | SWT.READ_ONLY );
     levelCombo.setBounds( 130, 0, 100, 30 );
+    levelCombo.setBackground(buttonColor);
     levelCombo.add( "EASY" );
     levelCombo.add( "NORMAL" );
     levelCombo.add( "HARD" );
@@ -165,14 +178,32 @@ public class Menu {
     javaLabel.setBounds( 35, 405, 300, 20 );
     final Button replayButton  =  new Button( shell, SWT.PUSH );
     replayButton.setText( "REPLAY" );
-    replayButton.setBackground( red );
-    replayButton.setForeground( black );
-    replayButton.setBounds( 155, 430, 100, 30 );
+    replayButton.setBackground( buttonColor );
+    replayButton.setForeground( textColor );
+    replayButton.setBounds( 103, 430, 90, 30 );
+    replayButton.setEnabled(false);
+    
+    final Button statisticsButton  =  new Button( shell, SWT.PUSH );
+    statisticsButton.setText( "STATISTICS" );
+    statisticsButton.setBackground( buttonColor );
+    statisticsButton.setForeground( textColor );
+    statisticsButton.setBounds( 198, 430, 90, 30 );
+    statisticsButton.setEnabled(false);
+    Listener statisticsListener  =  new Listener( ) {
+        public void handleEvent( Event event ) {
+  	     if(table.getSelectionIndex()!=-1)
+      	  play.statisticsOpen( shell, display, "", level,replayMode,fileNames[table.getSelectionIndex()]);
+  	     openMenu(shell,display);
+  	     shell.setVisible(false);
+        }
+      };
+      statisticsButton.addListener( SWT.Selection, statisticsListener );
+ 
     Button backButton  =  new Button( shell, SWT.PUSH );
     backButton.setText( "BACK" );
-    backButton.setBackground( white );
-    backButton.setForeground( black );
-    backButton.setBounds( 35, 430, 100, 30 );
+    backButton.setBackground( buttonColor );
+    backButton.setForeground( textColor );
+    backButton.setBounds( 8, 430, 90, 30 );
     Listener backListener  =  new Listener( ) {
       public void handleEvent( Event event ) {
         openMenu( shell, display );
@@ -193,6 +224,7 @@ public class Menu {
     sortLabel.setBounds( 55, 45, 70, 30 );
     final  Combo sortingSel =  new Combo( shell, SWT.DROP_DOWN | SWT.READ_ONLY );
     sortingSel.setBounds( 130, 40, 100, 30 );
+    sortingSel.setBackground(buttonColor);
     sortingSel.add( "SCORES" );
     sortingSel.add( "NAMES" );
     sortingSel.setText( "SCORES" );
@@ -207,10 +239,19 @@ public class Menu {
 	  column.setText( titles[i] );
 	}
     fillTable( table,level, titles.length,criterion );
-	levelCombo.addSelectionListener( new SelectionAdapter( ) {
+    table.addSelectionListener( new SelectionAdapter( ) {
+  	  public void widgetSelected( SelectionEvent e ) {
+  		 statisticsButton.setEnabled(true);
+  		 replayButton.setEnabled(true);
+  	  }   
+  	});
+    
+    levelCombo.addSelectionListener( new SelectionAdapter( ) {
 	  public void widgetSelected( SelectionEvent e ) {
 		table.clearAll( );
 	   	table.setItemCount( 0 );
+		statisticsButton.setEnabled(false);
+  		replayButton.setEnabled(false);	
 		if ( levelCombo.getText( ).equals( "EASY" ) ) {
 		  level=2;
 		  fillTable( table, level, titles.length, criterion );       	 
@@ -227,7 +268,9 @@ public class Menu {
 	   public void widgetSelected( SelectionEvent e ) {
 	     table.clearAll( );
 		 table.setItemCount( 0 );
-		   if ( sortingSel.getText( ).equals( "SCORES" ) ) {
+		 statisticsButton.setEnabled(false);
+  		 replayButton.setEnabled(false);
+		 if ( sortingSel.getText( ).equals( "SCORES" ) ) {
 			 criterion=0;
 			 fillTable( table, level, titles.length, criterion );       	 
 		   } else if ( sortingSel.getText( ).equals( "NAMES" ) ) {
@@ -242,24 +285,20 @@ public class Menu {
 	for ( Control kid : shell.getChildren( ) ) {
       kid.dispose( );
     }
-    Color yellow  =  display.getSystemColor( SWT.COLOR_YELLOW );
-    Color red  =  display.getSystemColor( SWT.COLOR_RED );
-    Color black  =  display.getSystemColor( SWT.COLOR_BLACK );
-    Color white  =  display.getSystemColor( SWT.COLOR_WHITE );
-    shell.setForeground( yellow );
-    shell.setBackground( yellow );
+    shell.setForeground( textColor );
+    shell.setBackground( backGroundColor );
     shell.setText( "Information" );
     
     Button exitButton  =  new Button( shell, SWT.PUSH );
     exitButton.setText( "EXIT" );
-    exitButton.setBackground( red );
-    exitButton.setForeground( black );
+    exitButton.setBackground( buttonColor );
+    exitButton.setForeground( textColor );
     exitButton.setBounds( 155, 430, 100, 30 );
  
     Button backButton  =  new Button( shell, SWT.PUSH );
     backButton.setText( "BACK" );
-    backButton.setBackground( white );
-    backButton.setForeground( black );
+    backButton.setBackground( buttonColor );
+    backButton.setForeground( textColor );
     backButton.setBounds( 35, 430, 100, 30 );
     
     String info = "Игрок управляет длинным, тонким существом, напоминающим змею, " +
@@ -292,12 +331,8 @@ public class Menu {
 	  kid.dispose( );
 	}
     level = 2;
-	Color green  =  display.getSystemColor( SWT.COLOR_GREEN );
-	Color red  =  display.getSystemColor( SWT.COLOR_RED );
-	Color white  =  display.getSystemColor( SWT.COLOR_WHITE );
-	Color black  =  display.getSystemColor( SWT.COLOR_BLACK ); 
-	shell.setForeground( green );
-	shell.setBackground( green ); 
+	shell.setForeground( textColor );
+	shell.setBackground( backGroundColor ); 
 	shell.setText( "New game" );
 	
 	Label selectLevelLabel  =  new Label( shell, SWT.None );
@@ -306,6 +341,7 @@ public class Menu {
 	
 	final Combo selectLevel  =  new Combo( shell, SWT.DROP_DOWN | SWT.READ_ONLY );
 	selectLevel.setBounds( 130, 100, 100, 30 );
+	selectLevel.setBackground(buttonColor);
 	selectLevel.add( "EASY" );
 	selectLevel.add( "NORMAL" );
 	selectLevel.add( "HARD" );
@@ -324,17 +360,17 @@ public class Menu {
 	playerNameLabel.setBounds( 50, 155, 70, 30 );
 	final Text playerName  =  new Text ( shell, SWT.BORDER );
 	playerName.setBounds( 130, 150, 100, 30 );
-	
+	playerName.setBackground(buttonColor);
     Button startButton  =  new Button( shell, SWT.PUSH );
 	startButton.setText( "&START" );
-	startButton.setBackground( red );
-	startButton.setForeground( black );
+	startButton.setBackground( buttonColor );
+	startButton.setForeground( textColor );
 	startButton.setBounds( 155, 430, 100, 30 );
 	
 	Button backButton  =  new Button( shell, SWT.PUSH );
 	backButton.setText( "BACK" );
-	backButton.setBackground( white );
-	backButton.setForeground( black ); 
+	backButton.setBackground( buttonColor );
+	backButton.setForeground( textColor ); 
 	backButton.setBounds( 35, 430, 100, 30);
 	Listener backListener  =  new Listener( ) {
       public void handleEvent( Event event ) {
@@ -352,24 +388,14 @@ public class Menu {
 	    shell.setVisible( false );
 	  }
 	};
-	Button genButton  =  new Button( shell, SWT.PUSH );
-	genButton.setText( "GENERATE" );
-	genButton.setBackground( white );
-	genButton.setForeground( black ); 
-	genButton.setBounds( 35, 230, 100, 30);
-	Listener genListener  =  new Listener( ) {
-      public void handleEvent( Event event ) {
-	  }
-	};
-	genButton.addListener( SWT.Selection, genListener );
 	startButton.addListener( SWT.Selection, startListener );
 	backButton.addListener( SWT.Selection, backListener );
   }
   /**  It reads the data from the file and fills the high score table*/
   public static void fillTable( Table table, int level,int titleLenght,int criterion) {   //считывание из файла и запись в таблицу
-    File fName  =  new File( "files/names.txt" );
+	File fName  =  new File( "files/names.txt" );
 	int []levelNumbers=new int[3];
-    try {
+	try {
 	  Scanner repSc = new Scanner( fName );
 	  for( int i = 0 ; i<3 ; i++ )
 	    levelNumbers[i]=repSc.nextInt();
@@ -377,67 +403,142 @@ public class Menu {
 	}
 	catch (IOException  e) { }
 	int Size=levelNumbers[level]-1;
+	if ( Size==0 ) return;
 	fileNames=new String[Size];
 	String []playerNames=new String[Size];
 	int []scores=new int[Size];
 	String []fileNamesJ=new String[Size];
 	String []playerNamesJ=new String[Size];
 	int []scoresJ=new int[Size];
-	for (int i=0 ; i<Size ; i++) {
-	  fileNames[i]=fileNamesJ[i]="files/"+String.valueOf(level)+"_"+String.valueOf(i+1)+".txt";
-	try {
-	  SeekableByteChannel fHelpChannel = Files.newByteChannel(Paths.get(fileNames[i]));
+	String name="";
+	try{
+	  SeekableByteChannel fHelpChannel = Files.newByteChannel(Paths.get("files/"+String.valueOf(level)+"_AllResults.txt"));
 	  int fileSize = (int) fHelpChannel.size();
 	  ByteBuffer bufferRead = ByteBuffer.allocate(fileSize);	
 	  fHelpChannel.read(bufferRead);
 	  bufferRead.flip();
-	  char temp;
-	  String name="";
-	  scores[i]=scoresJ[i]=bufferRead.getInt();
-	  while ( true ) {
-	  	temp = bufferRead.getChar();
-	     if ( temp == '+')
-		    	break;
-		    	name += String.valueOf(temp);
-	  }  
+	  char temp;		  
+	  for (int i=0 ; i<Size ; i++) {
+	    while ( true ) {
+	      temp = bufferRead.getChar();
+		  if ( temp == '+')
+		  	break;
+		  name += String.valueOf(temp);
+		}
+		fileNames[i]=fileNamesJ[i]=name;
+		name="";
+		while ( true ) {
+		  temp = bufferRead.getChar();
+		  if ( temp == '+')
+		  	break;
+		  name += String.valueOf(temp);
+	    }
+		playerNames[i]=playerNamesJ[i]=name;
+		name="";
+		scores[i]=scoresJ[i]=bufferRead.getInt();
+		bufferRead.getChar();
+      }
 	  fHelpChannel.close();
-	  playerNames[i]=playerNamesJ[i]=name;
 	} catch (IOException e) {
 	    e.printStackTrace();
 	  }
-    }  
 	long startTimeSc=0,endTimeSc=0,startTimeJ=0,endTimeJ=0;
 	if ( Size > 0) {
 	  if(criterion==0) {
-	 	startTimeSc = System.nanoTime();
-	    Sorting sortReplays = new Sorting();
+		Sorting sortReplays = new Sorting();    
+		startTimeSc = System.nanoTime();
 	    sortReplays.SCsort(fileNames, playerNames, scores);
 	    endTimeSc = System.nanoTime()-startTimeSc;
-	    startTimeJ = System.nanoTime();
 	    SortingJ sortJava=new SortingJ();
-	 	sortJava.SCsort(scoresJ, fileNamesJ, playerNamesJ, 0, Size-1);  
+	    startTimeJ = System.nanoTime();
+	    sortJava.SCsort(scoresJ, fileNamesJ, playerNamesJ, 0, Size-1);  
 	 	endTimeJ = System.nanoTime()-startTimeJ;
 	  } else  {
-	      startTimeSc = System.nanoTime();
-	 	  Sorting sortReplays = new Sorting();
+		  Sorting sortReplays = new Sorting();
+		  startTimeSc = System.nanoTime();
 	 	  sortReplays.AZsort(fileNames, playerNames, scores);
 	 	  endTimeSc = System.nanoTime()-startTimeSc;
-	 	  startTimeJ = System.nanoTime();
 	 	  SortingJ sortJava=new SortingJ();
+	 	  startTimeJ = System.nanoTime();
 	 	  sortJava.AZSort(scoresJ, fileNamesJ, playerNamesJ, 0, Size-1);  
 	 	  endTimeJ = System.nanoTime()-startTimeJ;
-	    }	
-	}
-	scalaLabel.setText( "Scala time (ns): " + String.valueOf(endTimeSc));
-	javaLabel.setText( "Java time (ns): " + String.valueOf(endTimeJ));		   
-    for ( int i  =  0; i < fileNames.length; i++ ) {
-      TableItem item  =  new TableItem( table, SWT.NONE );
-      item.setText( 0, playerNames[i] );
-      item.setText( 1, String.valueOf(scores[i]));
-    }
-    for ( int i = 0; i<titleLenght; i++ ) {
-      table.getColumn ( i ).pack ( );
-    }
+	    }		
+	  scalaLabel.setText( "Scala time (ns): " + String.valueOf(endTimeSc));
+	  javaLabel.setText( "Javas time (ns): " + String.valueOf(endTimeJ));
+      for ( int i  =  0; i < fileNames.length; i++ ) {
+        TableItem item  =  new TableItem( table, SWT.NONE );
+        item.setText( 0, playerNames[i] );
+        item.setText( 1, String.valueOf(scores[i]));
+      }
+      for ( int i = 0; i<titleLenght; i++ ) {
+        table.getColumn ( i ).pack ( );
+      }
     table.setBounds( 45, 80, 200, 280 );
-  }  
+  }
+}  
+  public static void openGenerate(final Shell shell, final Display display ) {
+    final Snake MySnake=new Snake();
+	final Random random=new Random();    	 	  	
+  	for ( Control kid : shell.getChildren( ) ) {
+	  kid.dispose( );
+	}
+    level = 2;
+	shell.setForeground( textColor );
+	shell.setBackground( backGroundColor ); 
+	shell.setText( "Generate" );
+	final Label numberLabel  =  new Label( shell, SWT.None );
+	numberLabel.setText( "Input numbers :  " );
+	numberLabel.setBounds( 50, 155, 70, 30 );
+	final Text numberText  =  new Text ( shell, SWT.BORDER );
+	numberText.setBounds( 130, 150, 100, 30 );
+	numberText.setBackground(buttonColor);
+    Button startButton  =  new Button( shell, SWT.PUSH );
+	startButton.setText( "&START" );
+	startButton.setBackground( buttonColor );
+	startButton.setForeground( textColor );
+	startButton.setBounds( 155, 430, 100, 30 );
+	final ProgressBar bar = new ProgressBar(shell, SWT.SMOOTH);
+	bar.setBounds(10, 10, 200, 32);
+	bar.setSelection(0);
+		
+	Button backButton  =  new Button( shell, SWT.PUSH );
+	backButton.setText( "BACK" );
+	backButton.setBackground( buttonColor );
+	backButton.setForeground( textColor ); 
+	backButton.setBounds( 35, 430, 100, 30);
+	final Runnable runnable  =  new Runnable( ) {
+	public void run( ) {
+	  String botName;               
+	  bar.setMaximum(Integer.valueOf(numberText.getText()));
+	  for ( int i=0; i<Integer.valueOf(numberText.getText()); i++ ) {
+		botName="bot"+String.valueOf((1+random.nextInt( 20 )));			
+		MySnake.startValue( 2,botMode,botName ,"");
+	    if ( !MySnake.getLife( ) ) {                    
+	      return;
+	  }
+	  while ( true ) {
+		if ( MySnake.getLife() == true ) {
+		  MySnake.animate(null);  
+		}
+		else {
+		  MySnake.repFileClose();
+		  break;
+		}
+	  }	
+	  bar.setSelection(i);              
+    }}
+	};
+	Listener backListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {
+	    openMenu( shell, display );
+ 	  }
+	};
+    Listener startListener  =  new Listener( ) {
+	  public void handleEvent( Event event ) {	  
+        display.asyncExec(runnable);
+      }
+	};
+	startButton.addListener( SWT.Selection, startListener );
+	backButton.addListener( SWT.Selection, backListener );			
+  }
 }

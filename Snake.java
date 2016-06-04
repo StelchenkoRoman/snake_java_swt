@@ -42,6 +42,7 @@ public class Snake {
   private  boolean life,endFileFlag = true;					   // переменная определяющая конец игры ( false - конец игры )
   public boolean keyFlag=true;
   private  int mode;
+  private  String playerName,fileRepName;
   private  Random random;                       // переменная для генерации рандомной позиции еды
   Snake( ) {									   // конструктор Snake
 	snakeCoords  =  new ArrayList<Coords>( );     // выделение памяти под список координат
@@ -104,8 +105,10 @@ public class Snake {
   }
   /** this method set start vakue */
   public void startValue( int levelSel, int modeV,String name,String fileNameRep ) {	// метод со стартовыми настройки игры
+	level = levelSel;   
 	mode =modeV;
 	life  =  true;
+	playerName= name;
 	endFileFlag = true;
 	snakeCoords.clear( );			// очистка списка координат элементов змейки
 	if ( mode == replayMode ) {
@@ -113,7 +116,6 @@ public class Snake {
 	} else {
 	points  =  0;
     size  =  2;
-    level = levelSel;
     boolean flag;
     if ( random.nextInt( 2 )  ==  1 ) {  	// выбор оси движения
       direction  =  1;
@@ -168,8 +170,9 @@ public class Snake {
 		}catch ( IOException ex ) {
 		    throw new RuntimeException( ex );
 		  }
+   fileRepName="files/"+String.valueOf(level)+"_"+String.valueOf(levelNumbers[level]-1)+".txt";
    try {
-	fSaveChannel = (FileChannel) Files.newByteChannel(Paths.get("files/"+String.valueOf(level)+"_"+String.valueOf(levelNumbers[level]-1)+".txt"), StandardOpenOption.WRITE,
+	fSaveChannel = (FileChannel) Files.newByteChannel(Paths.get(fileRepName), StandardOpenOption.WRITE,
 				  StandardOpenOption.CREATE);
 	 ByteBuffer buffer = ByteBuffer.allocate(14+name.length()*2);
 	  buffer.putInt(0);
@@ -389,6 +392,7 @@ public class Snake {
 	snakeCoords.add( c );
 	size++;          //увеличение размера змейки
 	points++;			//увеличение кол-ва набранных очков
+	if(score!=null)
 	score.setText( "Score :  "+ points );  //вывод на экран кол-ва набраный очков
     while ( true ) { // цикл выполняющий генерирование новых коорднат еды
       flag = true;
@@ -414,22 +418,42 @@ public class Snake {
   }
   /** close replay file*/
   public void repFileClose() {
-  try {
-	  
+    try {  
 	  fSaveChannel.position(0);
 	  ByteBuffer buffer = ByteBuffer.allocate(4);
 	  buffer.putInt(points);
 	  buffer.flip();
 	  fSaveChannel.write(buffer);
 	  fSaveChannel.close();
-} catch (IOException e1) {
-}
+    } catch (IOException e1) {
+      } 
+    try {
+   	 fSaveChannel = (FileChannel) Files.newByteChannel(Paths.get("files/"+String.valueOf(level)+"_AllResults.txt"), StandardOpenOption.WRITE,
+	 StandardOpenOption.APPEND,StandardOpenOption.CREATE	);
+	 ByteBuffer buffer = ByteBuffer.allocate(playerName.length()*2+fileRepName.length()*2+10);
+	 for(int i=0;i<fileRepName.length();i++) {
+	   buffer.putChar(fileRepName.toCharArray()[i]);
+	 }
+	 buffer.putChar('+');
+	 for(int i=0;i<playerName.length();i++) {
+	   buffer.putChar(playerName.toCharArray()[i]);
+	 }
+	 buffer.putChar('+');
+	 buffer.putInt(points);
+	 buffer.putChar('\n');
+	 buffer.flip();
+	 fSaveChannel.write(buffer);
+	 fSaveChannel.close();
+   } catch (IOException e1) {
+	   e1.printStackTrace();
+	 }
   }
   /** animation in the replay mode*/
   public void replayAnimate(Label score) {
-	for ( int i = size-1; i>0; i-- )    // координаты всех элементов змейки принимают значение предыдущих  элементов
-	  snakeCoords.get( i ).value( snakeCoords.get( i-1 ).x, snakeCoords.get( i-1 ).y );
+	  for ( int i = size-1; i>0; i-- )    // координаты всех элементов змейки принимают значение предыдущих  элементов
+		  snakeCoords.get( i ).value( snakeCoords.get( i-1 ).x, snakeCoords.get( i-1 ).y );
 	
+	  
 	if ( !bufferRead.hasRemaining() ) {
 		endFileFlag = false;
 		return;
@@ -455,6 +479,11 @@ public class Snake {
 	 
 	 if ( snakeCoords.get( 0 ).x == foodCords.x && snakeCoords.get( 0 ).y == foodCords.y ) {// при совпадении координат еды с координатой головы змейки 		  	  
 		  points++;
+		  Coords c = new Coords( );
+		  c.value( snakeCoords.get( size-1 ).x, snakeCoords.get( size-1 ).y );
+		  snakeCoords.add( c );
+		
+		  size++;
 		  score.setText( "Score :  "+ points ); 
 	      foodCords.x = bufferRead.getInt();
 		  foodCords.y = bufferRead.getInt();
@@ -463,17 +492,18 @@ public class Snake {
 				return;
 			  } 	
 		} 
+		
 	for ( int i = 1; i<size; i++ ) {   //при совпадении координат головы змейки и одного из эл-тов змейки игра прекращается
 	  if ( snakeCoords.get( 0 ).x == snakeCoords.get( i ).x && snakeCoords.get( 0 ).y == snakeCoords.get( i ).y )  {	          
 	    life = false;
   	  }
     }
 	wallInspection();
+		
   }
   /** start settings in the replay mode*/
   public void replay(String FileNameRep) {   // считывание начальных координат в режиме "replay"
 	try {	    
-	  level = Integer.valueOf(FileNameRep.toCharArray()[0]);
 	  size=2;
 	  points=0;
 	  fHelpChannel = Files.newByteChannel(Paths.get(FileNameRep));
@@ -535,4 +565,70 @@ public class Snake {
   public boolean getFileFlag() {
  return endFileFlag;
   }
+  /**generate games*/
+  public void genAnimate() {
+	boolean flag;
+	startValue( 2, botMode,"bot","");
+
+	while(life) {
+		if ( snakeCoords.get( 0 ).x == foodCords.x && snakeCoords.get( 0 ).y == foodCords.y ) {// при совпадении координат еды с координатой головы змейки 		  	  
+	  Coords c = new Coords( );
+	  c.value( snakeCoords.get( size-1 ).x, snakeCoords.get( size-1 ).y );
+	  snakeCoords.add( c );
+	  size++;          //увеличение размера змейки
+	  points++;			//увеличение кол-ва набранных очков
+	  while ( true ) { // цикл выполняющий генерирование новых коорднат еды
+		flag = true;
+		foodCords.x = ( 1+random.nextInt( 28 ) )*20;
+		foodCords.y = ( 1+random.nextInt( 18 ) )*20;
+		for ( int i = 0;i<size;i++ ) {
+		  if ( foodCords.x == snakeCoords.get( i ).x && foodCords.y == snakeCoords.get( i ).y ) {// цикл завершается когда координата еды не перекрывает ни один элем
+		    flag = false;
+		    break;
+		  }
+		}
+		if ( !flag )
+		  continue;
+		for ( int i = 0; i<wallSize; i++ ) {     // сравнение координат еды с координатами дополнительных стенок карты
+		  if (  foodCords.x == walls[i].x && foodCords.y == walls[i].y ) {
+		    flag = false;
+		    break;
+		  }
+		}
+		if ( flag )
+		  break;
+		}	
+	    try {
+		  ByteBuffer buffer = ByteBuffer.allocate(8);
+		  buffer.putInt(snakeCoords.get(0).x);
+		  buffer.putInt(snakeCoords.get(0).y);	
+		  buffer.flip();
+		  fSaveChannel.write(buffer);
+		} catch (IOException e) {
+		  e.printStackTrace();
+		}
+		if(flag){
+		  try {
+		  	ByteBuffer buffer = ByteBuffer.allocate(8);
+		    buffer.putInt(foodCords.x);
+		    buffer.putInt(foodCords.y);
+		    buffer.flip();
+		   fSaveChannel.write(buffer);
+			} catch (IOException e) {
+			e.printStackTrace();
+			}
+			 flag=false;
+		  }
+		for ( int i = size-1; i>0; i-- )    // координаты всех элементов змейки принимают значение предыдущих  элементов
+		  snakeCoords.get( i ).value( snakeCoords.get( i-1 ).x, snakeCoords.get( i-1 ).y ); 
+	    botAnimate();
+	    for ( int i = 1; i<size; i++ ) {   //при совпадении координат головы змейки и одного из эл-тов змейки игра прекращается
+		if ( snakeCoords.get( 0 ).x == snakeCoords.get( i ).x && snakeCoords.get( 0 ).y == snakeCoords.get( i ).y )  {	          
+		life = false;
+		}
+	}
+	}
+	}
+  }
+  
   }
