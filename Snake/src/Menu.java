@@ -71,7 +71,6 @@ public class Menu {
 	shell.setText( "Snake" );
 	textColor = new Color ( device, 0, 0, 0);
 	buttonColor  =  new Color ( device, 255, 218, 185 );
-	//backGroundColor = new Color ( device, 173, 216, 230  );
 	backGroundColor = new Color ( device, 224, 238, 224  );
 	
 	shell.setBackground( backGroundColor );	      

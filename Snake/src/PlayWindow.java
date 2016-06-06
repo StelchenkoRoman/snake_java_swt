@@ -29,6 +29,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import org.eclipse.swt.widgets.Text;
 /**
  * this class describes Play window
  * @author green
@@ -36,15 +37,16 @@ import java.util.Random;
  */
 public class PlayWindow {         //игровое окно
   private final int IMAGE_WIDTH  =  20;
-  private  final int botMode = 1;
-  private int keyPause = 262144, TIMER_INTERVAL = 100;
+  private  final int botMode = 1,replayMode = 3;
+  private int gameMode,keyPause = 262144, TIMER_INTERVAL = 100;
   private Label scoreLabel;
   private Canvas canvas;
   private Shell shell, mainShell;
   private Display display;
   private String playerName, nameFile;
   private Button pauseButton, newGameButton;
-  private boolean pauseFlag, newGameFlag;
+  private boolean pauseFlag, newGameFlag,menuFlag;
+  private Text annotationText;
   private static Color buttonColor,backGroundColor,textColor;
   private Snake MySnake = new Snake( );    //объект класса Snake
   /**  Thread-server class*/
@@ -53,6 +55,8 @@ public class PlayWindow {         //игровое окно
   	/** here is the calculation of the positions of the snake segments and the food*/
   	public void run() {
   		MySnake.animate( scoreLabel );
+  		if ( gameMode == replayMode )
+  		annotationText.setText(annotationText.getText() + MySnake.getAnnotationString());
   	}
   }
   Device device  =  Display.getCurrent ( );
@@ -70,13 +74,14 @@ public class PlayWindow {         //игровое окно
     shell.setSize( 620, 470 );
     shell.setMinimumSize( 620, 470 );
     pauseFlag = false;
+    menuFlag = false;
    shell.setBackground( backGroundColor );
   }
   /** Client-thread, here is updated graphical field, and checks the end of the game*/
   final Runnable runnable  =  new Runnable( ) {
 	public void run( ) {
       if ( !shell.isDisposed( ) )
-	    if ( !pauseFlag ) {
+	    if ( !pauseFlag && !menuFlag) {
 		  SnakeAnimate snAnim = new SnakeAnimate();
 		  snAnim.run();
 		  try {
@@ -107,7 +112,17 @@ public class PlayWindow {         //игровое окно
 	}
 	shell.setText( "Snake" );
 	newGameFlag = false;
+	menuFlag = false;
+	gameMode = mode;
 	MySnake.startValue( level,mode,name ,fileNameRep);
+	if ( gameMode == replayMode ) {
+	  shell.setSize(900,470);
+	  annotationText = new Text(shell, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+	  annotationText.setBounds( 630, 10, 250, 400 );
+	  annotationText.setBackground(buttonColor);
+	  annotationText.setText(MySnake.getAnnotationString());
+	}
+	else shell.setSize(620,470);
 	playerName = name;
 	Button exitButton  =  new Button( shell, SWT.PUSH );
 	exitButton.setText( "EXIT" );
@@ -136,10 +151,8 @@ public class PlayWindow {         //игровое окно
 	shell.addListener(SWT.Close, new Listener() {
 	  public void handleEvent(Event event) {
 		if ( MySnake.getMode() != 3) {
-		  if( MySnake.getLife() == true ) {
-		  } else
-		  MySnake.repFileClose();
-	    }
+		    MySnake.repFileClose();
+		}
 	  }
 	});
 	Listener  pauseListener  =  new Listener( ) {
@@ -160,9 +173,7 @@ public class PlayWindow {         //игровое окно
 	Listener  exitListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
 		if ( MySnake.getMode() != 3) {
-		  if( MySnake.getLife() == true ) {
-		  } else
-		  MySnake.repFileClose();
+		    MySnake.repFileClose();
 		}
 		System.exit( 0 );
 	  }
@@ -171,12 +182,11 @@ public class PlayWindow {         //игровое окно
 	  public void handleEvent( Event event ) {
 	 	newGameFlag = true;
 	    mainShell.setVisible( true );
-	    if ( MySnake.getMode() != 3) {
-	      if( MySnake.getLife() == true ) {
-	     } else
-		   MySnake.repFileClose();
-	    }
 	 	shell.setVisible( false );
+	 	menuFlag = true;
+	 	if ( MySnake.getMode() != 3) {
+		  MySnake.repFileClose();
+		}
 		return;
       }
 	};
@@ -202,9 +212,9 @@ public class PlayWindow {         //игровое окно
 	scoreLabel.setBounds( 10, 420, 70, 20 );
 	canvas  =  new Canvas( shell, SWT.NO_BACKGROUND );
 	canvas.setBounds( 7, 10, 600, 400 );
-	final  Image image  =  new Image( shell.getDisplay( ), "/home/green/final vers1.png" );
-    final  Image image2  =  new Image( shell.getDisplay( ), "/home/green/d.gif" );
-    final  Image image3  =  new Image( shell.getDisplay( ), "/home/green/index.jpeg" ); 
+	final  Image image  =  new Image( shell.getDisplay( ), "images/final vers1.png" );
+    final  Image image2  =  new Image( shell.getDisplay( ), "images/d.gif" );
+    final  Image image3  =  new Image( shell.getDisplay( ), "images/index.jpeg" ); 
    
     canvas.addPaintListener( new PaintListener( ) {    // отрисовка игрового поля
 	  public void paintControl( PaintEvent event ) {
@@ -300,7 +310,7 @@ public class PlayWindow {         //игровое окно
 	pauseButton.setVisible( false );
 	shell.setText( "Game over" );
 	Label image_label  =  new Label( shell, SWT.NONE );               // загрузка кортинки
-	image_label.setImage( new Image( display, "/home/green/ov.png" ) );
+	image_label.setImage( new Image( display, "images/ov.png" ) );
 	image_label.setBounds( 70, 50, 380, 280 );
 	Label gameOverLabel  =  new Label( shell, SWT.WRAP | SWT.CENTER );
 	gameOverLabel.setText( " Your score : "+points );
@@ -331,6 +341,10 @@ public class PlayWindow {         //игровое окно
 	};
 	Listener  menuListener  =  new Listener( ) {
 	  public void handleEvent( Event event ) {
+		  
+		if ( MySnake.getMode() != 3) {
+			    MySnake.repFileClose();
+		}
 	    mainShell.setVisible( true );
 	 	shell.setVisible( false );
 		return;
@@ -370,10 +384,11 @@ public class PlayWindow {         //игровое окно
   	  scoreLabel.setText(String.valueOf(totalPoints)+ " -   total points" );
   	  while ( true ) {
   		temp = bufferRead.getChar();
-  	    if(temp == '+')
+  	    if ( temp == '+' ) {
   	      break;
+  	    }
   		fileName += String.valueOf(temp);
-        } 
+      } 
   	  Coords foodStCoordss = new Coords();
   	  foodStCoordss.x=bufferRead.getInt();
   	  foodStCoordss.y=bufferRead.getInt();
@@ -382,7 +397,8 @@ public class PlayWindow {         //игровое окно
         Coords readSnCoords = new Coords();
 	    readSnCoords.x=bufferRead.getInt();
 	    readSnCoords.y=bufferRead.getInt();
-	    if ( readSnCoords.x==foodStatCoords.get(foodStatCoords.size()-1).x && readSnCoords.y==foodStatCoords.get(foodStatCoords.size()-1).y) {
+	    if ( readSnCoords.x==foodStatCoords.get(foodStatCoords.size()-1).x 
+	    		&& readSnCoords.y==foodStatCoords.get(foodStatCoords.size()-1).y) {
 	      if ( !bufferRead.hasRemaining() )
 	  	    break;
 	      Coords foodStCoords = new Coords();

@@ -1,4 +1,3 @@
-
 public class SortingJ {
   public static void SCsort(int[] score,String[] fileName,String[] playerName, int l, int r) {
     int i = l;
